@@ -1,0 +1,36 @@
+.ingridients {
+  max-width: 600px;
+  margin-right: 40px;
+}
+
+.ingridients__title {
+  text-align: left;
+}
+
+.ingridients__tab {
+  display: flex;
+}
+
+.ingridients__blocks {
+  text-align: left;
+  left: 0px;
+  top: 156px;
+  overflow-y: scroll;
+  width: 100%;
+  height: 65vh;
+}
+
+.ingridients__blocks::-webkit-scrollbar {
+  width: 8px;
+}
+.ingridients__blocks::-webkit-scrollbar-track {
+  background: #2f2f37;
+}
+
+.ingridients__blocks::-webkit-scrollbar-thumb {
+  background: #a5a5d6;
+}
+
+.ingridients__blocks::-webkit-scrollbar-thumb:hover {
+  background: #8585ad;
+}
