@@ -1,4 +1,4 @@
-import { func } from "prop-types";
+import { func, string } from "prop-types";
 import style from "./ModalOverlay.module.css";
 
 export const ModalOverlay = ({ onClick }) => (
@@ -7,4 +7,5 @@ export const ModalOverlay = ({ onClick }) => (
 
 ModalOverlay.propTypes = {
   onClick: func,
+  className: string,
 };

@@ -7,7 +7,7 @@ const useFilterIngredient = (ingredients, targetType) =>
     [ingredients, targetType]
   );
 
-export const useGroupIngredients = (ingredients) => ({
+export const useGroupedIngredients = (ingredients) => ({
   buns: useFilterIngredient(ingredients, "bun"),
   sauces: useFilterIngredient(ingredients, "sauce"),
   mains: useFilterIngredient(ingredients, "main"),

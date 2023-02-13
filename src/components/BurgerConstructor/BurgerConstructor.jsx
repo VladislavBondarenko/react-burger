@@ -2,58 +2,97 @@ import {
   Button,
   ConstructorElement,
   CurrencyIcon,
-  DragIcon,
 } from "@ya.praktikum/react-developer-burger-ui-components";
-import { useMemo, useState } from "react";
-import { useGroupIngredients } from "../../hooks/useFilteredIngredient";
-import { sum } from "../../utils/sum";
-import { OrderDetails } from "../OrderDetails/OrderDetails";
+import { useMemo } from "react";
+import { useDrop } from "react-dnd";
+import { useAppDispatch } from "../../hooks/useAppDispatch";
+import { makeOrder } from "../../services/actions/orderObject";
 import style from "./BurgerConstructor.module.css";
-import { number, string } from "prop-types";
+import {
+  useSelectedIngredients,
+  useSelectedIngredientsIds,
+  useSelectedIngredientsPrice,
+} from "../../hooks/useSelectedIngredients";
+import { bool, func, number, string } from "prop-types";
+import { CONSTRUCTOR_ADD_INGREDIENT } from "../../services/actions/burgerConstructor";
+import { BurgerConstructorIngredient } from "../BurgerConstructorBlock/BurgerConstructorBlock";
 
-const ingredientToConstructorElementProps = (ingredient) => ({
+export const ingredientToConstructorElementProps = (ingredient) => ({
   price: ingredient?.price ?? 0,
   thumbnail: ingredient?.image ?? void 0,
   text: ingredient?.name ?? "",
 });
 
-export function BurgerConstructor({ selectedIngredients }) {
-  const [isOpened, setIsOpened] = useState(false);
-  const totalPrice = useMemo(
-    () => sum(...selectedIngredients.map((ingredient) => ingredient.price)),
-    [selectedIngredients]
+const EMPTY_BUN = {
+  text: "Перетяните булочку сюда",
+  price: 0,
+  thumbnail: "/loading.svg",
+};
+
+const useBun = () => {
+  const selectedBun = useSelectedIngredients().bun;
+  const bunProps = useMemo(
+    () =>
+      selectedBun
+        ? ingredientToConstructorElementProps(selectedBun)
+        : EMPTY_BUN,
+    [selectedBun]
   );
-  const {
-    buns: [burgerBun],
-    mains,
-    sauces,
-  } = useGroupIngredients(selectedIngredients);
-  const middleIngredients = [...mains, ...sauces];
-  const topAndBottomProps = {
-    ...ingredientToConstructorElementProps(burgerBun),
-    isLocked: true,
-  };
+
+  return useMemo(
+    () => ({
+      top: {
+        ...bunProps,
+        text: [bunProps.text, "(верх)"].join(" "),
+        type: "top",
+        isLocked: true,
+      },
+      bottom: {
+        ...bunProps,
+        text: [bunProps.text, "(низ)"].join(" "),
+        type: "bottom",
+        isLocked: true,
+      },
+    }),
+    [bunProps]
+  );
+};
+
+export function BurgerConstructor() {
+  const totalPrice = useSelectedIngredientsPrice();
+  const dispatch = useAppDispatch();
+  const [, dropRef] = useDrop({
+    accept: "ingredient",
+    drop: (data) =>
+      dispatch({
+        type: CONSTRUCTOR_ADD_INGREDIENT,
+        payload: data,
+      }),
+  });
+
+  const { mid: middleIngredients, bun: selectedBun } = useSelectedIngredients();
+  const bun = useBun();
+  const selectedIngredientsIds = useSelectedIngredientsIds();
 
   return (
     <section className={`${style.card} mt-25 `}>
-      <ul className={style.card__list}>
+      <ul ref={dropRef} className={style.card__list}>
         <li className={`${style.card__list_item}`}>
-          <ConstructorElement type="top" {...topAndBottomProps} />
+          <ConstructorElement {...bun.top} />
         </li>
         <div className={`${style.card__list_ingredients}`}>
           <ul className={style.card__list}>
-            {middleIngredients.map((ingredient) => (
-              <li key={ingredient._id} className={style.card__list_item}>
-                <DragIcon type="primary" />
-                <ConstructorElement
-                  {...ingredientToConstructorElementProps(ingredient)}
-                />
-              </li>
+            {middleIngredients.map((ingredient, index) => (
+              <BurgerConstructorIngredient
+                key={ingredient.key}
+                index={index}
+                ingredient={ingredient}
+              />
             ))}
           </ul>
         </div>
         <li className={`${style.card__list_item}`}>
-          <ConstructorElement type="bottom" {...topAndBottomProps} />
+          <ConstructorElement {...bun.bottom} />
         </li>
       </ul>
       <div className={`${style.card__container} mt-10`}>
@@ -62,15 +101,15 @@ export function BurgerConstructor({ selectedIngredients }) {
           <CurrencyIcon type="primary" />
         </div>
         <Button
+          disabled={selectedIngredientsIds.length === 0 || !selectedBun}
           htmlType="button"
-          onClick={() => setIsOpened(true)}
+          onClick={() => dispatch(makeOrder(selectedIngredientsIds))}
           type="primary"
           size="large"
-          style={{ marginRight: "16px" }}
+          extraClass="mr-4"
         >
           Оформить заказ
         </Button>
-        {isOpened && <OrderDetails onClose={() => setIsOpened(false)} />}
       </div>
     </section>
   );
@@ -81,4 +120,9 @@ BurgerConstructor.propTypes = {
   thumbnail: string,
   text: string,
   totalPrice: number,
+  isLocked: bool,
+  disabled: bool,
+  onClick: func,
+  className: string,
+  extraClass: string,
 };

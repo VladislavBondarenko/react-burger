@@ -1,10 +1,6 @@
-.constructor__column {
-  display: grid;
-  grid-template-columns: 48px 536px;
-  align-items: center;
-  justify-content: center;
-}
-
-.constructor__element {
-  width: 536px;
+.card__list_item {
+  position: absolute;
+  padding: 0;
+  width: 568px;
+  margin-right: 8px;
 }

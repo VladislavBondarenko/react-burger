@@ -13,7 +13,7 @@ function AppHeader() {
         <ul className={`${styles.header__list} mt-4 mb-4`}>
           <li className={styles.header__list_item}>
             <a href="#" className={styles.header__link_active}>
-              <BurgerIcon type="primary" />
+              <BurgerIcon type={"primary"} />
               <p
                 className={`${styles.header__link_text} ml-2 text text_type_main-default`}
               >
@@ -23,7 +23,7 @@ function AppHeader() {
           </li>
           <li className={`${styles.header__list_item} ml-2`}>
             <a href="#" className={styles.header__link}>
-              <ListIcon />
+              <ListIcon type={"secondary"} />
               <p
                 className={`${styles.header__link_text} ml-2 text text_type_main-default`}
               >
@@ -36,7 +36,7 @@ function AppHeader() {
           <Logo />
         </div>
         <a href="#" className={styles.header__link}>
-          <ProfileIcon />
+          <ProfileIcon type={"secondary"} />
           <p
             className={`${styles.header__link_text} ml-2 text text_type_main-default`}
           >
