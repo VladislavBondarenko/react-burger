@@ -1,0 +1,22 @@
+.modal__title_container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  width: 640px;
+  height: 64px;
+  margin: 40px auto;
+}
+
+.modal__ingredients_info_container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  row-gap: 20px;
+  width: 516px;
+  margin: 0px auto 60px;
+}
+
+.modal__ingredients_info {
+  min-width: 112px;
+}
