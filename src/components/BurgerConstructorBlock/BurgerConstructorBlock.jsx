@@ -1,21 +1,98 @@
-import ingredientGroupStyle from "./BurgerIngredientGroup.module.css";
-import { BurgerIngredient } from "../BurgerIngredient/BurgerIngredient";
-import { array, string } from "prop-types";
+import {
+  ConstructorElement,
+  DragIcon,
+} from "@ya.praktikum/react-developer-burger-ui-components";
+import {atom} from "jotai";
+import { useAtom}from "jotai/react";
+import { bool, element, string } from "prop-types";
+import { useLayoutEffect } from "react";
+import { useDrag, useDrop } from "react-dnd";
+import { useAppDispatch } from "../../hooks/useAppDispatch";
+import { useIngredientById } from "../../hooks/useIngridients";
+import { useSelectedMidIngredientByIndex } from "../../hooks/useSelectedIngredients";
+import { mergeRefs } from "../../utils/mergeRefs";
+import { ingredientToConstructorElementProps } from "../BurgerConstructor/BurgerConstructor";
+import style from "../BurgerConstructor/BurgerConstructor.module.css";
+import {
+  CONSTRUCTOR_MOVE_INGREDIENT,
+  CONSTRUCTOR_DELETE_INGREDIENT,
+} from "../../services/actions/burgerConstructor";
 
-export const BurgerIngredientGroup = ({ ingredientsList, title }) => (
-  <>
-    <h2 className="text text_type_main-medium mb-6 mt-10">{title}</h2>
-    <ul className={ingredientGroupStyle.ingredients__list}>
-      {ingredientsList.map(({ _id: id, ...ingredientData }) => (
-        <li key={id}>
-          <BurgerIngredient ingredientData={ingredientData} />
-        </li>
-      ))}
-    </ul>
-  </>
-);
+const overIndexAtom = atom(null);
+const countOfOverItems = atom(0);
 
-BurgerIngredientGroup.propTypes = {
-  title: string,
-  ingredientsList: array,
+export function BurgerConstructorIngredient({ index, ingredient }) {
+  const dispatch = useAppDispatch();
+
+  const [{ isDragging }, dragRef] = useDrag({
+    type: "MOVED_INGREDIENT",
+    item: { index },
+    collect: (monitor) => {
+      return {
+        isDragging: monitor.isDragging(),
+      };
+    },
+  });
+
+  const [overIndex, setOverIndex] = useAtom(overIndexAtom);
+  const [countOfOver, setCountOfOver] = useAtom(countOfOverItems);
+
+  const [{ isOver }, dropRef] = useDrop({
+    accept: "MOVED_INGREDIENT",
+    collect: (monitor) => ({ isOver: monitor.isOver() }),
+    drop: (item) => {
+      dispatch({
+        type: CONSTRUCTOR_MOVE_INGREDIENT,
+        payload: [index, item.index],
+      });
+    },
+  });
+
+  useLayoutEffect(() => {
+    if (!isOver) {
+      return;
+    }
+    setCountOfOver((count) => count + 1);
+    return () => setCountOfOver((count) => count - 1);
+  }, [isOver, setCountOfOver]);
+  const overIngredient = useIngredientById(
+    useSelectedMidIngredientByIndex(countOfOver === 0 ? null : overIndex)
+  );
+
+  useLayoutEffect(() => {
+    if (isOver && overIndex !== index) {
+      setOverIndex(index);
+    }
+  }, [index, isOver, overIndex, setOverIndex]);
+  return (
+    <li
+      ref={mergeRefs(dragRef, dropRef)}
+      style={
+        isOver || (isDragging && !overIngredient) ? { opacity: 0 } : void 0
+      }
+      className={style.card__list_item}
+    >
+      <DragIcon type="primary" />
+      <ConstructorElement
+        handleClose={() =>
+          dispatch({
+            type: CONSTRUCTOR_DELETE_INGREDIENT,
+            payload: { index },
+          })
+        }
+        {...ingredientToConstructorElementProps(
+          isDragging && overIngredient ? overIngredient : ingredient
+        )}
+      />
+    </li>
+  );
+}
+
+BurgerConstructorIngredient.propTypes = {
+  className: string,
+  ref: element,
+  DragIcon: element,
+  ConstructorElement: element,
+  type: string,
+  isDragging: bool,
 };

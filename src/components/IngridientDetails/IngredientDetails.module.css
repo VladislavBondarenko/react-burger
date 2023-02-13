@@ -20,3 +20,9 @@
 .modal__ingredients_info {
   min-width: 112px;
 }
+
+.modal__ingredient_img {
+  width: 520px;
+  height: 240px;
+  object-fit: contain;
+}

@@ -1,36 +1,104 @@
 import style from "./BurgerIngridients.module.css";
 import { Tab } from "@ya.praktikum/react-developer-burger-ui-components";
-import React from "react";
 import { BurgerIngredientsBlock } from "../BurgerIngridientsBlock/BurgerIngridientsBlock";
-import { useGroupIngredients } from "../../hooks/useFilteredIngredient";
+import { array, bool, func, string } from "prop-types";
+import { useEffect, useRef, useState } from "react";
+import { reverse } from "../../utils/reverse";
 
-export default function BurgerIngredients({ ingredients }) {
-  const { buns, mains, sauces } = useGroupIngredients(ingredients);
-  const [current, setCurrent] = React.useState("bun");
+const INGREDIENT_GROUPS = ["bun", "sauce", "main"];
+const SCROLL_MARGIN = 50;
+
+export function BurgerIngredients() {
+  const [current, setCurrent] = useState("bun");
+  const parentRef = useRef(null);
+  const groupRefs = {
+    bun: useRef(null),
+    main: useRef(null),
+    sauce: useRef(null),
+  };
+  const groupRefsRef = useRef(groupRefs);
+  groupRefsRef.current = groupRefs;
+  useEffect(() => {
+    if (!parentRef.current) return;
+    const ingredientGroups = INGREDIENT_GROUPS.map((groupName) => ({
+      groupName,
+      element: groupRefsRef.current[groupName].current,
+    }));
+    const intersectionObserver = new IntersectionObserver(
+      () => {
+        const parentRect = parentRef.current?.getBoundingClientRect();
+        if (!parentRect) return;
+        const currentGroup = reverse(
+          ingredientGroups
+            .map((item) => ({
+              clientRect: item.element?.getBoundingClientRect(),
+              groupName: item.groupName,
+            }))
+            .map(({ clientRect, ...item }) => ({
+              ...item,
+              y: parentRect.y - (clientRect?.y ?? 0),
+            }))
+        ).find((group) => group.y >= -SCROLL_MARGIN);
+        if (!currentGroup) return;
+        setCurrent(currentGroup.groupName);
+      },
+      {
+        root: parentRef.current,
+        threshold: [0.01, 0.1, 0.2, 0.4, 0.8, 1],
+      }
+    );
+    ingredientGroups.forEach(({ element }) => {
+      if (!element) return;
+      intersectionObserver.observe(element);
+    });
+    return () => intersectionObserver.disconnect();
+  }, []);
+  const scrollToCurrent = (newCurrent) =>
+    groupRefs[newCurrent]?.current?.scrollIntoView({
+      behavior: "smooth",
+    });
 
   return (
-    <section className={style.ingridients}>
+    <section className={style.ingredients}>
       <h1
-        className={`${style.ingridients__title}text text_type_main-large mt-10 mb-5`}
+        className={`${style.ingredients__title} text text_type_main-large mt-10 mb-5`}
       >
         Соберите бургер
       </h1>
-      <div className={style.ingridients__tab}>
-        <Tab value="bun" active={current === "bun"} onClick={setCurrent}>
+      <div className={style.ingredients__tab}>
+        <Tab value="bun" active={current === "bun"} onClick={scrollToCurrent}>
           Булки
         </Tab>
-        <Tab value="sauce" active={current === "sauce"} onClick={setCurrent}>
+        <Tab
+          value="sauce"
+          active={current === "sauce"}
+          onClick={scrollToCurrent}
+        >
           Соусы
         </Tab>
-        <Tab value="main" active={current === "main"} onClick={setCurrent}>
+        <Tab value="main" active={current === "main"} onClick={scrollToCurrent}>
           Начинки
         </Tab>
       </div>
-      <div className={style.ingridients__blocks}>
-        <BurgerIngredientsBlock ingredientsList={buns} title="Булки" />
-        <BurgerIngredientsBlock ingredientsList={sauces} title="Соусы" />
-        <BurgerIngredientsBlock ingredientsList={mains} title="Начинки" />
+
+      <div ref={parentRef} className={style.ingredients__blocks}>
+        {INGREDIENT_GROUPS.map((groupName) => (
+          <BurgerIngredientsBlock
+            key={groupName}
+            ref={groupRefs[groupName]}
+            ingredientType={groupName}
+          />
+        ))}
       </div>
     </section>
   );
 }
+
+BurgerIngredients.propTypes = {
+  onClick: func,
+  value: string,
+  active: bool,
+  ingredientsList: array,
+  title: string,
+  className: string,
+};
